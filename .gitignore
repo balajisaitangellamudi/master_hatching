@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+
+# npm lock file
+package-lock.json
+
 # Expo
 .expo/
 dist/
@@ -39,3 +43,4 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+package-lock.json
