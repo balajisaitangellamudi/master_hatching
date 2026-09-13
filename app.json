@@ -19,6 +19,7 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "web": {}
+    "web": {},
+    "plugins": ["expo-status-bar", "expo-font"]
   }
 }
