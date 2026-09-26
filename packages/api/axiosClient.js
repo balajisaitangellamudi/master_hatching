@@ -1,7 +1,8 @@
 import axios from "axios";
 import { tokenStorage } from "../storage/tokenStorage";
 
-let _baseURL = "https://api.hatchmaster.com/v1";
+let _baseURL =
+  process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
 /**
  * Configure the shared API client.

@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../../../../packages/validation/auth.schema";
-import { useLogin } from "../hooks/useAuth";
+import { useLogin, useGoogleLogin } from "../hooks/useAuth";
 
 const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -41,16 +41,37 @@ const LoginScreen = ({ navigation }) => {
   } = useLogin({
     onSuccess: (data) => {
       console.log("Login Successful:", data);
-      // Navigate to home / dashboard
+      navigation?.replace("Home");
     },
     onError: (err) => {
       console.log("Login Error:", err);
     },
   });
 
+  const {
+    mutate: googleLogin,
+    isPending: isGooglePending,
+    error: googleError,
+  } = useGoogleLogin({
+    onSuccess: (data) => {
+      console.log("Google Login Successful:", data);
+      navigation?.replace("Home");
+    },
+    onError: (err) => {
+      console.log("Google Login Error:", err);
+    },
+  });
+
+  const onGoogleSignIn = () => {
+    console.log("Google Sign-In pressed");
+    // Place Google ID token authentication here when Google SDK is linked
+  };
+
   const onSubmit = (data) => {
     login(data);
   };
+
+  const displayError = apiError?.message || googleError?.message;
 
   return (
     <LinearGradient
@@ -86,21 +107,19 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Form Card */}
             <View style={styles.card}>
-              {/* API Error Message */}
-              {apiError && (
+              {/* Stable Error Banner Container (Prevents Layout Shifts / Screen Flickering) */}
+              {displayError ? (
                 <View style={styles.apiErrorBox}>
                   <Ionicons
                     name="alert-circle-outline"
                     size={18}
                     color="#FF6B6B"
                   />
-                  <Text style={styles.apiErrorText}>
-                    {apiError?.message || "Invalid credentials"}
-                  </Text>
+                  <Text style={styles.apiErrorText}>{displayError}</Text>
                 </View>
-              )}
+              ) : null}
 
-              {/* Email Input */}
+              {/* Email Address Input */}
               <View style={styles.inputWrapper}>
                 <View
                   style={[
@@ -214,6 +233,37 @@ const LoginScreen = ({ navigation }) => {
                   )}
                 </LinearGradient>
               </TouchableOpacity>
+
+              {/* ── OR Divider ── */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* ── Google Sign-In Button with Official Google Icon ── */}
+              <TouchableOpacity
+                style={styles.googleButton}
+                activeOpacity={0.85}
+                disabled={isGooglePending}
+                onPress={onGoogleSignIn}
+              >
+                {isGooglePending ? (
+                  <ActivityIndicator color="#5F6368" size="small" />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="logo-google"
+                      size={20}
+                      color="#EA4335"
+                      style={styles.googleIcon}
+                    />
+                    <Text style={styles.googleButtonText}>
+                      Sign in with Google
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
 
             {/* Bottom Section */}
@@ -305,7 +355,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(42, 22, 71, 0.8)",
     borderRadius: 24,
     padding: 20,
-    paddingTop: 38,
+    paddingTop: 28,
     borderWidth: 1,
     borderColor: "rgba(179, 157, 219, 0.15)",
     shadowColor: "#000",
@@ -324,7 +374,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 14,
+    marginBottom: 16,
     gap: 8,
   },
   apiErrorText: {
@@ -383,7 +433,6 @@ const styles = StyleSheet.create({
   signInButtonContainer: {
     borderRadius: 14,
     overflow: "hidden",
-    marginBottom: 20,
     shadowColor: "#FF2A85",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
@@ -399,6 +448,49 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+
+  /* OR Divider */
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 18,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(179,157,219,0.2)",
+  },
+  dividerText: {
+    color: "#8E7BAE",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+  },
+
+  /* Google Button */
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  googleIcon: {
+    marginRight: 10,
+  },
+  googleButtonText: {
+    color: "#3C4043",
+    fontSize: 15,
+    fontWeight: "600",
   },
 
   /* Bottom */

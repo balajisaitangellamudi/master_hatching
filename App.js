@@ -12,6 +12,7 @@ import { store } from "./packages/store/store";
 import StartScreen from "./apps/mobile/src/screens/StartScreen";
 import LoginScreen from "./apps/mobile/src/screens/LoginScreen";
 import SignUpScreen from "./apps/mobile/src/screens/SignUpScreen";
+import HomeScreen from "./apps/mobile/src/screens/HomeScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +34,7 @@ export default function App() {
               <Stack.Screen name="Start" component={StartScreen} />
               <Stack.Screen name="Login" component={LoginScreen} />
               <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen name="Home" component={HomeScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>

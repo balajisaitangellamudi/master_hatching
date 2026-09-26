@@ -5,6 +5,7 @@
 export {
   useLogin,
   useSignUp,
+  useGoogleLogin,
   useCurrentUser,
   useLogout,
   AUTH_KEYS,

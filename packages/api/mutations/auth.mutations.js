@@ -5,6 +5,7 @@ import {
   register,
   logout as logoutApi,
   getCurrentUser,
+  googleAuth,
 } from "../endpoints/auth.api";
 import {
   loginSuccess,
@@ -16,28 +17,34 @@ export const AUTH_KEYS = {
   currentUser: ["auth", "currentUser"],
 };
 
+/** Shared post-login handler: store token + update Redux + cache user */
+async function handleAuthSuccess(data, dispatch, queryClient) {
+  // Backend returns { status: "success", token: "...", data: { user: { ... } } }
+  const token = data?.token || data?.accessToken;
+  if (token) {
+    await tokenStorage.setToken(token);
+  }
+  const user = data?.data?.user || data?.user || data;
+  dispatch(loginSuccess(user));
+  queryClient.setQueryData(AUTH_KEYS.currentUser, user);
+}
+
 /**
- * React-Query mutation for logging in.
- * Stores the token, updates Redux auth state, and caches the user.
+ * React-Query mutation for logging in with email + password.
  */
 export function useLogin(options = {}) {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
-  const { onSuccess: userOnSuccess, onError: userOnError, ...restOptions } =
-    options;
+  const {
+    onSuccess: userOnSuccess,
+    onError: userOnError,
+    ...restOptions
+  } = options;
 
   return useMutation({
     mutationFn: login,
     onSuccess: async (data, variables, context) => {
-      const token = data?.accessToken || data?.token;
-      if (token) {
-        await tokenStorage.setToken(token);
-      }
-
-      const user = data?.user || data;
-      dispatch(loginSuccess(user));
-      queryClient.setQueryData(AUTH_KEYS.currentUser, user);
-
+      await handleAuthSuccess(data, dispatch, queryClient);
       userOnSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
@@ -49,26 +56,46 @@ export function useLogin(options = {}) {
 
 /**
  * React-Query mutation for signing up.
- * Stores the token, updates Redux auth state, and caches the user.
  */
 export function useSignUp(options = {}) {
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
-  const { onSuccess: userOnSuccess, onError: userOnError, ...restOptions } =
-    options;
+  const {
+    onSuccess: userOnSuccess,
+    onError: userOnError,
+    ...restOptions
+  } = options;
 
   return useMutation({
     mutationFn: register,
     onSuccess: async (data, variables, context) => {
-      const token = data?.accessToken || data?.token;
-      if (token) {
-        await tokenStorage.setToken(token);
-      }
+      await handleAuthSuccess(data, dispatch, queryClient);
+      userOnSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      userOnError?.(error, variables, context);
+    },
+    ...restOptions,
+  });
+}
 
-      const user = data?.user || data;
-      dispatch(loginSuccess(user));
-      queryClient.setQueryData(AUTH_KEYS.currentUser, user);
+/**
+ * React-Query mutation for Google OAuth login.
+ * Pass the Google ID token received from Google Sign-In.
+ */
+export function useGoogleLogin(options = {}) {
+  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
+  const {
+    onSuccess: userOnSuccess,
+    onError: userOnError,
+    ...restOptions
+  } = options;
 
+  return useMutation({
+    mutationFn: ({ idToken }) => googleAuth(idToken),
+    onSuccess: async (data, variables, context) => {
+      await handleAuthSuccess(data, dispatch, queryClient);
       userOnSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
@@ -91,7 +118,7 @@ export function useCurrentUser(options = {}) {
 
 /**
  * React-Query mutation for logging out.
- * Clears token, Redux state, and all cached queries.
+ * Revokes refresh token, clears httpOnly cookie, removes local token.
  */
 export function useLogout(options = {}) {
   const dispatch = useDispatch();
@@ -104,7 +131,6 @@ export function useLogout(options = {}) {
       await tokenStorage.removeToken();
       dispatch(logoutAction());
       queryClient.clear();
-
       userOnSuccess?.(data, variables, context);
     },
     ...restOptions,
